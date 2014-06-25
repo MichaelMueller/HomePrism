@@ -21,7 +21,7 @@ ADD_DEFINITIONS(${QT_DEFINITIONS})
 
 # sources
 SET(HomePrism_SOURCES main.cpp HomePrism.cpp)
-SET(HomePrism_HEADERS HomePrism.h)
+SET(HomePrism_HEADERS HomePrism.h CvImageWidget.h)
 SET(HomePrism_RCCS resources.qrc)
 SET(HomePrism_FORMS HomePrism.ui)
 
@@ -32,20 +32,17 @@ QT4_WRAP_UI(HomePrism_FORMS_HEADERS ${HomePrism_FORMS})
 
 # include dir
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # executable and link libraries
 ADD_EXECUTABLE( ${PROJECT_NAME} WIN32 MACOSX_BUNDLE
-    ${HomePrism_HEADERS} 
-    ${HomePrism_SOURCES} 
-    ${HomePrism_HEADERS_MOC}    
-    ${HomePrism_FORMS_HEADERS} 
-    ${HomePrism_RCC_SRCS})    
-    
-Set_Target_Properties(${PROJECT_NAME} PROPERTIES
-	LINK_FLAGS_RELEASE /ENTRY:"mainCRTStartup"
-	LINK_FLAGS_DEBUG /SUBSYSTEM:CONSOLE)
+    ${HomePrism_HEADERS}
+    ${HomePrism_SOURCES}
+    ${HomePrism_HEADERS_MOC}
+    ${HomePrism_FORMS_HEADERS}
+    ${HomePrism_RCC_SRCS})
 
-TARGET_LINK_LIBRARIES( ${PROJECT_NAME} ${QT_LIBRARIES})
+TARGET_LINK_LIBRARIES( ${PROJECT_NAME} ${QT_LIBRARIES} ${OpenCV_LIBS})
 
 # cpack
 INSTALL(TARGETS ${PROJECT_NAME} DESTINATION bin)

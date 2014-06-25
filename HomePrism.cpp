@@ -1,11 +1,80 @@
 #include <QtGui>
-#include <QtNetwork/QNetworkRequest>
-#include <QtNetwork/QNetworkReply>
+#include <QTimer>
 #include <iostream>
 
 #include "HomePrism.h"
 #include <HomePrismConfig.h>
+#include "ui_HomePrism.h"
 
+class HomePrismData
+{
+public:
+    Ui::HomePrismMainWindow ui;
+    cv::VideoCapture capture;
+    QTimer* m_CaptureTimer;
+    cv::Mat currentImage;
+};
+
+HomePrism::HomePrism()
+    : d(new HomePrismData)
+{
+    d->m_CaptureTimer = new QTimer(this);
+    d->m_CaptureTimer->setInterval(40);
+    d->m_CaptureTimer->setObjectName("captureTimer");
+
+
+    d->ui.setupUi(this);
+}
+
+HomePrism::~HomePrism()
+{
+    delete d;
+    d = 0;
+}
+
+void HomePrism::on_showVideoButton_toggled(bool checked)
+{
+    //d->ui.statusbar->showMessage( "on_showVideoButton_Toggled" );
+    if( checked )
+    {
+        d->m_CaptureTimer->start();
+    }
+    else
+    {
+        d->m_CaptureTimer->stop();
+    }
+}
+
+void HomePrism::on_captureTimer_timeout()
+{
+    //d->ui.statusbar->showMessage( "on_captureTimer_timeout" );
+    if( !d->capture.isOpened() )
+    {
+        d->capture.open( d->ui.cameraNumber->value() );
+    }
+
+    cv::Mat image;
+    bool readImage = d->capture.read(image);
+    if( !readImage )
+    {
+        d->ui.statusbar->showMessage("Error: Cannot read images from capture device (Wrong capture number?)!");
+        d->ui.showVideoButton->click();
+    }
+
+    d->currentImage = image;
+    d->ui.cvImageWidget->showImage( d->currentImage );
+}
+
+void HomePrism::on_cameraNumber_valueChanged(int)
+{
+    if( d->ui.showVideoButton->isChecked() )
+    {
+        d->ui.showVideoButton->click();
+        d->capture.release();
+    }
+}
+
+/*
   HomePrism::HomePrism()
    : m_Manager( new QNetworkAccessManager(this) ),
      m_UpdateTimer(new QTimer(this)),
@@ -60,7 +129,7 @@
       switch (reason) {
       case QSystemTrayIcon::DoubleClick:
         this->setVisible(!this->isVisible());
-          break;
+          break;click()
       default:
           ;
       }
@@ -95,7 +164,7 @@
  {
    QNetworkReply::NetworkError error =
      pReply->error();
-   
+
    if( error == QNetworkReply::NoError )
    {
 
@@ -177,3 +246,4 @@
  {
    m_UpdateTimer->setInterval( i * 60 * 1000 );
  }
+ */

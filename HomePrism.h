@@ -2,9 +2,8 @@
 #define HomePrism_H
 
 #include <QSystemTrayIcon>
-#include <QWidget>
+#include <QMainWindow>
 #include <QGridLayout>
-#include <QtNetwork/QNetworkAccessManager>
 
 class QAction;
 class QCheckBox;
@@ -16,14 +15,25 @@ class QMenu;
 class QPushButton;
 class QSpinBox;
 class QTextEdit;
+class HomePrismData;
 
-class HomePrism : public QWidget
+class HomePrism : public QMainWindow
 {
     Q_OBJECT
 
 public:
     HomePrism();
+    virtual ~HomePrism();
 
+protected slots:
+    void on_showVideoButton_toggled(bool);
+    void on_captureTimer_timeout();
+    void on_cameraNumber_valueChanged(int);
+
+private:
+    HomePrismData* d;
+
+    /*
     void setVisible(bool visible);
 
 protected:
@@ -66,6 +76,7 @@ private:
     QString m_Message;
     int m_MessageTime;
     QString m_Title;
+*/
 };
 
 #endif
