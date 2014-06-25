@@ -1,0 +1,8 @@
+#ifndef HomePrismConfig_H
+#define HomePrismConfig_H
+
+#define HomePrism_MAJOR_VERSION ${HomePrism_MAJOR_VERSION}
+#define HomePrism_MINOR_VERSION ${HomePrism_MINOR_VERSION}
+#define HomePrism_PATCH_VERSION ${HomePrism_PATCH_VERSION}
+
+#endif

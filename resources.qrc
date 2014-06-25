@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/HomePrism">
+    <file>camera.png</file>
+  </qresource>
+</RCC>
+
