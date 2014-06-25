@@ -23,10 +23,12 @@ ADD_DEFINITIONS(${QT_DEFINITIONS})
 SET(HomePrism_SOURCES main.cpp HomePrism.cpp)
 SET(HomePrism_HEADERS HomePrism.h)
 SET(HomePrism_RCCS resources.qrc)
+SET(HomePrism_FORMS HomePrism.ui)
 
 # generate rules for building source files from the resources
 QT4_ADD_RESOURCES(HomePrism_RCC_SRCS ${HomePrism_RCCS})
 QT4_WRAP_CPP(HomePrism_HEADERS_MOC ${HomePrism_HEADERS})
+QT4_WRAP_UI(HomePrism_FORMS_HEADERS ${HomePrism_FORMS})
 
 # include dir
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -35,7 +37,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 ADD_EXECUTABLE( ${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     ${HomePrism_HEADERS} 
     ${HomePrism_SOURCES} 
-    ${HomePrism_HEADERS_MOC}
+    ${HomePrism_HEADERS_MOC}    
+    ${HomePrism_FORMS_HEADERS} 
     ${HomePrism_RCC_SRCS})    
     
 Set_Target_Properties(${PROJECT_NAME} PROPERTIES
