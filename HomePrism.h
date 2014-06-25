@@ -35,6 +35,11 @@ protected slots:
     void on_recordingButton_toggled(bool);
     void on_snapshotTimer_timeout();
 
+    void on_wipeCheckBox_toggled(bool);
+    void on_wipeTime_valueChanged(int);
+    void on_wipeTimeMultiplier_currentIndexChanged (int i);
+    void on_wipeTimer_timeout();
+
 private:
     bool readCurrentImage();
     void SaveData();

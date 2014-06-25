@@ -22,6 +22,7 @@ public:
     cv::Mat currentImage;
     QSettings* settings;
     QTimer* snapshotTimer;
+    QTimer* wipeTimer;
 };
 
 HomePrism::HomePrism()
@@ -37,6 +38,10 @@ HomePrism::HomePrism()
 
     d->snapshotTimer = new QTimer(this);
     d->snapshotTimer->setObjectName("snapshotTimer");
+
+    d->wipeTimer = new QTimer(this);
+    d->wipeTimer->setInterval(1000*60);
+    d->wipeTimer->setObjectName("wipeTimer");
 
     d->ui.setupUi(this);
     setWindowTitle( HomePrism_TITLE );
@@ -159,10 +164,71 @@ void HomePrism::on_snapshotTimer_timeout()
 
             d->ui.statusbar->showMessage(err);
         }
+        /*
         else
         {
             QString info = QString("Snapshot %1 saved!").arg(QString::fromStdString(finalFileName));
             d->ui.statusbar->showMessage(info);
+        }
+        */
+    }
+}
+
+void HomePrism::on_wipeCheckBox_toggled(bool checked)
+{
+    this->SaveData();
+    if( checked )
+        d->wipeTimer->start();
+    else
+        d->wipeTimer->stop();
+}
+
+void HomePrism::on_wipeTime_valueChanged(int)
+{
+    this->SaveData();
+
+}
+
+void HomePrism::on_wipeTimeMultiplier_currentIndexChanged(int i)
+{
+    this->SaveData();
+
+}
+
+void HomePrism::on_wipeTimer_timeout()
+{
+    QDir dir(d->ui.snapshotDirectory->text());
+    QDateTime currentDateTime = QDateTime::currentDateTime();
+    qint64 currentTime = currentDateTime.toMSecsSinceEpoch();
+    // minutes
+    qint64 multiplier = 1000*60;
+    QString wipeTimeMultiplierString = d->ui.wipeTimeMultiplier->currentText();
+    if(wipeTimeMultiplierString == "hours")
+        multiplier = multiplier*60;
+    else if(wipeTimeMultiplierString == "days")
+        multiplier = multiplier*60*24;
+
+    qint64 wipeTime = d->ui.wipeTime->value();
+    qint64 allowedAge = wipeTime*multiplier;
+
+    QStringList filters;
+    for( int i=0; i<d->ui.snapshotFormat->count(); ++i )
+        filters << QString( QString("*.") + d->ui.snapshotFormat->itemText(i) );
+    //dir.setNameFilters(filters);
+
+    QFileInfoList fileList = dir.entryInfoList(filters);
+    for( int i=0; i<fileList.size(); ++i )
+    {
+        qint64 modTime = fileList.at(i).lastModified().toMSecsSinceEpoch();
+        qint64 age = currentTime - modTime;
+        if( age > allowedAge )
+        {
+            QFile file(fileList.at(i).absoluteFilePath());
+            if( !file.remove() )
+            {
+                QString err = QString("File %1 could not be wiped!").arg( fileList.at(i).absoluteFilePath() );
+                d->ui.statusbar->showMessage(err);
+            }
         }
     }
 }
@@ -193,12 +259,21 @@ void HomePrism::SaveData()
     d->settings->setValue("snapshotDirectory", d->ui.snapshotDirectory->text() );
     d->settings->setValue("snapshotFormat", d->ui.snapshotFormat->currentText() );
     d->settings->setValue("snapshotDelay", d->ui.snapshotDelay->value() );
+
+    d->settings->setValue("wipeCheckBox", d->ui.wipeCheckBox->isChecked() );
+    d->settings->setValue("wipeTime", d->ui.wipeTime->value() );
+    d->settings->setValue("wipeTimeMultiplier", d->ui.wipeTimeMultiplier->currentText() );
+
     d->settings->sync();
 
-    qDebug() << "settings saved: cameraNumber=" << d->settings->value("cameraNumber").toInt()
-             << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
-             << ", snapshotFormat=" << d->settings->value("snapshotFormat").toString()
-             << ", snapshotDelay=" << d->settings->value("snapshotDelay").toDouble();
+    qDebug() << "settings saved: "
+         << "cameraNumber=" << d->settings->value("cameraNumber").toInt()
+         << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
+         << ", snapshotFormat=" << d->settings->value("snapshotFormat").toString()
+         << ", snapshotDelay=" << d->settings->value("snapshotDelay").toDouble()
+         << ", wipeCheckBox=" << d->settings->value("wipeCheckBox").toBool()
+         << ", wipeTime=" << d->settings->value("wipeTime").toInt()
+         << ", wipeTimeMultiplier=" << d->settings->value("wipeTimeMultiplier").toString();
 }
 
 void HomePrism::LoadData()
@@ -233,16 +308,43 @@ void HomePrism::LoadData()
     if( d->settings->contains("snapshotDelay") )
         snapshotDelay = d->settings->value("snapshotDelay").toDouble();
 
-        qDebug() << "settings loaded: cameraNumber=" << d->settings->value("cameraNumber").toInt()
-             << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
-             << ", snapshotFormat=" << d->settings->value("snapshotFormat").toString()
-             << ", snapshotDelay=" << d->settings->value("snapshotDelay").toDouble();
+    // wipeCheckBox
+    bool wipeCheckBox = false;
+    if( d->settings->contains("wipeCheckBox") )
+        wipeCheckBox = d->settings->value("wipeCheckBox").toBool();
+
+    // cameraNumber
+    int wipeTime = 1;
+    if( d->settings->contains("wipeTime") )
+        wipeTime = d->settings->value("wipeTime").toInt();
+
+    // wipeTimeMultiplier
+    int wipeTimeMultiplierIndex = 0;
+    if( d->settings->contains("wipeTimeMultiplier") )
+    {
+        int index = d->ui.wipeTimeMultiplier->findText( d->settings->value("wipeTimeMultiplier").toString() );
+        if( index >= 0)
+            wipeTimeMultiplierIndex = index;
+    }
+
+
+    qDebug() << "settings loaded: "
+         << "cameraNumber=" << d->settings->value("cameraNumber").toInt()
+         << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
+         << ", snapshotFormat=" << d->settings->value("snapshotFormat").toString()
+         << ", snapshotDelay=" << d->settings->value("snapshotDelay").toDouble()
+         << ", wipeCheckBox=" << d->settings->value("wipeCheckBox").toBool()
+         << ", wipeTime=" << d->settings->value("wipeTime").toInt()
+         << ", wipeTimeMultiplier=" << d->settings->value("wipeTimeMultiplier").toString();
 
     // set ui
     d->ui.cameraNumber->setValue(cameraNumber);
     d->ui.snapshotDirectory->setText(snapshotDirectory);
     d->ui.snapshotFormat->setCurrentIndex(snapshotFormatIndex);
     d->ui.snapshotDelay->setValue(snapshotDelay);
+    d->ui.wipeCheckBox->setChecked(wipeCheckBox);
+    d->ui.wipeTime->setValue(wipeTime);
+    d->ui.wipeTimeMultiplier->setCurrentIndex(wipeTimeMultiplierIndex);
 
     // initialize values for timers etc
     d->snapshotTimer->setInterval(this->toMilliSeconds(d->ui.snapshotDelay->value()));
