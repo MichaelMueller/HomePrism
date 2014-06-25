@@ -29,54 +29,18 @@ protected slots:
     void on_showVideoButton_toggled(bool);
     void on_captureTimer_timeout();
     void on_cameraNumber_valueChanged(int);
+    void on_snapshotSelectButton_clicked();
+    void on_snapshotFormat_currentIndexChanged (int i);
+    void on_snapshotDelay_valueChanged(double);
+    void on_recordingButton_toggled(bool);
+    void on_snapshotTimer_timeout();
 
 private:
+    bool readCurrentImage();
+    void SaveData();
+    void LoadData();
     HomePrismData* d;
-
-    /*
-    void setVisible(bool visible);
-
-protected:
-    void closeEvent(QCloseEvent *event);
-
-private slots:
-    void on_UpdateRateSpinBoxValue_Changed( int i );
-    void iconActivated(QSystemTrayIcon::ActivationReason reason);
-    void replyFinished(QNetworkReply*);
-    void fetch();
-
-
-private:
-    void setIcon(QIcon& index);
-    void createOptionsGroupBox();
-    void createActions();
-    void createTrayIcon();
-
-    QLabel* m_StatusLabel;
-
-    QLabel* m_UpdateRateLabel;
-    QSpinBox* m_UpdateRateSpinBox;
-    QGridLayout* m_OptionsGroupBoxLayout;
-    QGroupBox* m_OptionsGroupBox;
-
-    QAction* m_RestoreAction;
-    QAction* m_QuitAction;
-
-    QSystemTrayIcon* m_TrayIcon;
-    QMenu* m_TrayIconMenu;
-    QNetworkAccessManager* m_Manager;
-
-    QTimer* m_UpdateTimer;
-
-    QIcon m_RedIcon;
-    QIcon m_GreenIcon;
-    QIcon m_RedGreenIcon;
-    QIcon m_QuestionIcon;
-    int m_PreviousResult;
-    QString m_Message;
-    int m_MessageTime;
-    QString m_Title;
-*/
+    int toMilliSeconds(double seconds);
 };
 
 #endif

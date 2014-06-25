@@ -5,4 +5,8 @@
 #define HomePrism_MINOR_VERSION ${HomePrism_MINOR_VERSION}
 #define HomePrism_PATCH_VERSION ${HomePrism_PATCH_VERSION}
 
+#define HomePrism_PROJECT_NAME "${PROJECT_NAME}"
+#define HomePrism_TITLE "HomePrism v${HomePrism_MAJOR_VERSION}.${HomePrism_MINOR_VERSION}.${HomePrism_PATCH_VERSION}"
+#define HomePrism_UUID "29808450-fc6d-11e3-a3ac-0800200c9a66v${HomePrism_MAJOR_VERSION}.${HomePrism_MINOR_VERSION}.${HomePrism_PATCH_VERSION}"
+
 #endif

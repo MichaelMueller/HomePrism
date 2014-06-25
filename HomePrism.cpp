@@ -1,6 +1,13 @@
 #include <QtGui>
 #include <QTimer>
+#include <QSettings>
+#include <QDateTime>
+#include <QFileInfo>
+#include <QDir>
+
 #include <iostream>
+
+#include <highgui.h>
 
 #include "HomePrism.h"
 #include <HomePrismConfig.h>
@@ -11,19 +18,29 @@ class HomePrismData
 public:
     Ui::HomePrismMainWindow ui;
     cv::VideoCapture capture;
-    QTimer* m_CaptureTimer;
+    QTimer* captureTimer;
     cv::Mat currentImage;
+    QSettings* settings;
+    QTimer* snapshotTimer;
 };
 
 HomePrism::HomePrism()
     : d(new HomePrismData)
 {
-    d->m_CaptureTimer = new QTimer(this);
-    d->m_CaptureTimer->setInterval(40);
-    d->m_CaptureTimer->setObjectName("captureTimer");
+    d->captureTimer = new QTimer(this);
+    d->captureTimer->setInterval(40);
+    d->captureTimer->setObjectName("captureTimer");
+    d->settings = new QSettings(QSettings::IniFormat,
+          QSettings::UserScope,
+          QCoreApplication::organizationName(),
+          QCoreApplication::applicationName(), this );
 
+    d->snapshotTimer = new QTimer(this);
+    d->snapshotTimer->setObjectName("snapshotTimer");
 
     d->ui.setupUi(this);
+    setWindowTitle( HomePrism_TITLE );
+    this->LoadData();
 }
 
 HomePrism::~HomePrism()
@@ -37,31 +54,22 @@ void HomePrism::on_showVideoButton_toggled(bool checked)
     //d->ui.statusbar->showMessage( "on_showVideoButton_Toggled" );
     if( checked )
     {
-        d->m_CaptureTimer->start();
+        d->captureTimer->start();
     }
     else
     {
-        d->m_CaptureTimer->stop();
+        d->captureTimer->stop();
     }
 }
 
 void HomePrism::on_captureTimer_timeout()
 {
-    //d->ui.statusbar->showMessage( "on_captureTimer_timeout" );
-    if( !d->capture.isOpened() )
+    if( !this->readCurrentImage() )
     {
-        d->capture.open( d->ui.cameraNumber->value() );
-    }
-
-    cv::Mat image;
-    bool readImage = d->capture.read(image);
-    if( !readImage )
-    {
-        d->ui.statusbar->showMessage("Error: Cannot read images from capture device (Wrong capture number?)!");
         d->ui.showVideoButton->click();
+        return;
     }
 
-    d->currentImage = image;
     d->ui.cvImageWidget->showImage( d->currentImage );
 }
 
@@ -72,178 +80,170 @@ void HomePrism::on_cameraNumber_valueChanged(int)
         d->ui.showVideoButton->click();
         d->capture.release();
     }
+    this->SaveData();
 }
 
-/*
-  HomePrism::HomePrism()
-   : m_Manager( new QNetworkAccessManager(this) ),
-     m_UpdateTimer(new QTimer(this)),
-     m_RedIcon(":/HomePrism/red-dot.png"),
-     m_GreenIcon(":/HomePrism/green-dot.png"),
-     m_RedGreenIcon(":/HomePrism/red-green-dot.png"),
-     m_QuestionIcon(":/HomePrism/question.png"),
-     m_PreviousResult(-1),
-     m_Message("The Dashboard status is unknown"),
-     m_MessageTime(6000),
-     m_Title(QString("HomePrism v%1.%2.%3").arg(HomePrism_MAJOR_VERSION).arg(HomePrism_MINOR_VERSION).arg(HomePrism_PATCH_VERSION))
-  {
-    // setup internals
-    m_UpdateTimer = new QTimer(this);
-    m_UpdateTimer->setInterval(2000*60);
+void HomePrism::on_snapshotSelectButton_clicked()
+{
+    QString dir = QFileDialog::getExistingDirectory( this, tr(HomePrism_TITLE) );
+    if( !dir.isEmpty() )
+    {
+        d->ui.snapshotDirectory->setText(dir);
+    }
+    this->SaveData();
+}
 
-    // setup UI
-    createOptionsGroupBox();
-    createActions();
-    createTrayIcon();
+void HomePrism::on_snapshotFormat_currentIndexChanged(int i)
+{
+    //std::cout<< "on_snapshotFormat_currentChanged" << std::endl;
+    this->SaveData();
+}
 
-    m_StatusLabel = new QLabel;
-    m_StatusLabel->setText(m_Message);
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(m_StatusLabel);
-    mainLayout->addWidget(m_OptionsGroupBox);
-    setLayout(mainLayout);
+void HomePrism::on_snapshotDelay_valueChanged(double delay)
+{
+    d->snapshotTimer->setInterval(this->toMilliSeconds(delay));
+    this->SaveData();
+}
 
-    setWindowTitle( m_Title );
-    this->setIcon( m_QuestionIcon );
+int HomePrism::toMilliSeconds(double seconds)
+{
+    return static_cast<int>(seconds*1000.0);
+}
 
-    // connect
-    connect(m_UpdateRateSpinBox, SIGNAL( valueChanged (int) ),
-            this, SLOT( on_UpdateRateSpinBoxValue_Changed(int) ));
+void HomePrism::on_recordingButton_toggled(bool checked)
+{
+    if( checked )
+    {
+        d->snapshotTimer->start();
+    }
+    else
+    {
+        d->snapshotTimer->stop();
+    }
+}
 
-    connect(m_TrayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
-            this, SLOT(iconActivated(QSystemTrayIcon::ActivationReason)));
+void HomePrism::on_snapshotTimer_timeout()
+{
 
-    connect(m_Manager, SIGNAL(finished(QNetworkReply*)),
-      this, SLOT(replyFinished(QNetworkReply*)));
+    QString dirStr = d->ui.snapshotDirectory->text();
+    if( dirStr.isEmpty() )
+        dirStr = ".";
+    dirStr = dirStr + QDir::separator();
 
-    connect(m_UpdateTimer, SIGNAL(timeout()),
-            this, SLOT(fetch()));
+    QString ext = QString(".") + d->ui.snapshotFormat->currentText();
 
-    // show/start
-    m_TrayIcon->show();
-    m_UpdateTimer->start();
-    this->fetch();
-  }
-  void HomePrism::iconActivated(QSystemTrayIcon::ActivationReason reason)
-  {
-      switch (reason) {
-      case QSystemTrayIcon::DoubleClick:
-        this->setVisible(!this->isVisible());
-          break;click()
-      default:
-          ;
-      }
-  }
- void HomePrism::setVisible(bool visible)
- {
-     m_RestoreAction->setEnabled(isMaximized() || !visible);
-     QWidget::setVisible(visible);
- }
+    //get current date and time
+    QDateTime dateTime = QDateTime::currentDateTime();
+	QString dateTimeString = dateTime.toString("yyMMdd-hhmmss");
+    QString baseFileName = dateTimeString;
 
- void HomePrism::closeEvent(QCloseEvent *event)
- {
-     if (m_TrayIcon->isVisible())
-     {
-         hide();
-         event->ignore();
-     }
- }
+    int i = 1;
+    QFileInfo f(dirStr+baseFileName+ext);
+    while(f.exists())
+    {
+        f = QFileInfo(dirStr+baseFileName+QString::number(i)+ext);
+        ++i;
+    }
 
- void HomePrism::setIcon(QIcon& icon)
- {
-     m_TrayIcon->setIcon(icon);
-     this->setWindowIcon(icon);
- }
+    if(!this->readCurrentImage())
+    {
+        d->ui.recordingButton->click();
+        return;
+    }
+    else
+    {
+        std::string finalFileName = f.absoluteFilePath().toStdString();
+        if(!cv::imwrite(finalFileName, d->currentImage))
+        {
+            QString err = QString("Error: Cannot write snapshot %1 (please check filename, permissions)!").arg(QString::fromStdString(finalFileName));
 
- void HomePrism::fetch()
- {
-     m_Manager->get(QNetworkRequest(QUrl("http://mbits/git-status/getRepoStatus.php")));
- }
+            d->ui.statusbar->showMessage(err);
+        }
+        else
+        {
+            QString info = QString("Snapshot %1 saved!").arg(QString::fromStdString(finalFileName));
+            d->ui.statusbar->showMessage(info);
+        }
+    }
+}
 
- void HomePrism::replyFinished(QNetworkReply* pReply)
- {
-   QNetworkReply::NetworkError error =
-     pReply->error();
+bool HomePrism::readCurrentImage()
+{
 
-   if( error == QNetworkReply::NoError )
-   {
+    if( !d->capture.isOpened() )
+    {
+        d->capture.open( d->ui.cameraNumber->value() );
+    }
 
-     QByteArray data=pReply->readAll();
-     QString str(data);
+    cv::Mat image;
+    bool readImage = d->capture.read(image);
+    if( !readImage )
+    {
+        d->ui.statusbar->showMessage("Error: Cannot read images from capture device (Wrong capture number?)!");
+        return false;
+    }
+    d->currentImage = image;
+    return true;
+}
 
-     int result = str.toInt();
-     if( m_PreviousResult != result )
-     {
-       if( result == 0 )
-       {
-         m_Message = "MITK and MITK-MBI Dashboard are green";
-         this->setIcon( m_GreenIcon );
-       }
-       else if( result == 1 )
-       {
-         m_Message = "MITK-MBI Dashboard is red";
-         this->setIcon( m_RedGreenIcon );
-       }
-       else if( result == 2 )
-       {
-         m_Message = "MITK and MITK-MBI Dashboard are red";
-         this->setIcon( m_RedIcon );
-       }
-       m_PreviousResult = result;
-     }
-   }
-   else
-   {
-     this->setIcon( m_QuestionIcon );
-   }
+void HomePrism::SaveData()
+{
+    qDebug() << "saving settings";
+    d->settings->setValue("cameraNumber", d->ui.cameraNumber->value() );
+    d->settings->setValue("snapshotDirectory", d->ui.snapshotDirectory->text() );
+    d->settings->setValue("snapshotFormat", d->ui.snapshotFormat->currentText() );
+    d->settings->setValue("snapshotDelay", d->ui.snapshotDelay->value() );
+    d->settings->sync();
 
-   m_TrayIcon->showMessage(QString(m_Title),
-                           m_Message,
-                           QSystemTrayIcon::Information, m_MessageTime);
-   m_TrayIcon->setToolTip(m_Message);
-   m_StatusLabel->setText(m_Message);
- }
+    qDebug() << "settings saved: cameraNumber=" << d->settings->value("cameraNumber").toInt()
+             << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
+             << ", snapshotFormat=" << d->settings->value("snapshotFormat").toString()
+             << ", snapshotDelay=" << d->settings->value("snapshotDelay").toDouble();
+}
 
- void HomePrism::createOptionsGroupBox()
- {
+void HomePrism::LoadData()
+{
+    qDebug() << "loading settings";
 
-   m_UpdateRateLabel = new QLabel(tr("Update Rate:"));
+    d->settings->sync();
 
-   m_UpdateRateSpinBox = new QSpinBox;
-   m_UpdateRateSpinBox->setRange(1, 3600);
-   m_UpdateRateSpinBox->setSuffix(" minutes");
-   m_UpdateRateSpinBox->setValue(2);
+    // cameraNumber
+    int cameraNumber = 0;
+    if( d->settings->contains("cameraNumber") )
+        cameraNumber = d->settings->value("cameraNumber").toInt();
 
-   m_OptionsGroupBoxLayout = new QGridLayout;
-   m_OptionsGroupBoxLayout->addWidget(m_UpdateRateLabel, 0, 0);
-   m_OptionsGroupBoxLayout->addWidget(m_UpdateRateSpinBox, 0, 1);
+    // snapshotDirectory
+    QString snapshotDirectory = "";
+    if( d->settings->contains("snapshotDirectory") )
+        snapshotDirectory = d->settings->value("snapshotDirectory").toString();
+    if(snapshotDirectory.isEmpty())
+        snapshotDirectory = QDir::currentPath();
 
-   m_OptionsGroupBox = new QGroupBox(tr("Options"));
-   m_OptionsGroupBox->setLayout(m_OptionsGroupBoxLayout);
- }
+    // snapshotFormat
+    int snapshotFormatIndex = 0;
+    if( d->settings->contains("snapshotFormat") )
+    {
+        int index = d->ui.snapshotFormat->findText( d->settings->value("snapshotFormat").toString() );
+        if( index >= 0)
+            snapshotFormatIndex = index;
+    }
 
- void HomePrism::createActions()
- {
-    m_RestoreAction = new QAction(tr("&Restore"), this);
-    connect(m_RestoreAction, SIGNAL(triggered()), this, SLOT(showNormal()));
+    // snapshotDelay
+    double snapshotDelay = 1;
+    if( d->settings->contains("snapshotDelay") )
+        snapshotDelay = d->settings->value("snapshotDelay").toDouble();
 
-    m_QuitAction = new QAction(tr("&Quit"), this);
-    connect(m_QuitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
- }
+        qDebug() << "settings loaded: cameraNumber=" << d->settings->value("cameraNumber").toInt()
+             << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
+             << ", snapshotFormat=" << d->settings->value("snapshotFormat").toString()
+             << ", snapshotDelay=" << d->settings->value("snapshotDelay").toDouble();
 
- void HomePrism::createTrayIcon()
- {
-     m_TrayIconMenu = new QMenu(this);
-     m_TrayIconMenu->addAction(m_RestoreAction);
-     m_TrayIconMenu->addAction(m_QuitAction);
+    // set ui
+    d->ui.cameraNumber->setValue(cameraNumber);
+    d->ui.snapshotDirectory->setText(snapshotDirectory);
+    d->ui.snapshotFormat->setCurrentIndex(snapshotFormatIndex);
+    d->ui.snapshotDelay->setValue(snapshotDelay);
 
-     m_TrayIcon = new QSystemTrayIcon(this);
-     m_TrayIcon->setContextMenu(m_TrayIconMenu);
-
- }
-
- void HomePrism::on_UpdateRateSpinBoxValue_Changed( int i )
- {
-   m_UpdateTimer->setInterval( i * 60 * 1000 );
- }
- */
+    // initialize values for timers etc
+    d->snapshotTimer->setInterval(this->toMilliSeconds(d->ui.snapshotDelay->value()));
+}
