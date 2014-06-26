@@ -30,6 +30,7 @@ protected slots:
     void on_captureTimer_timeout();
     void on_cameraNumber_valueChanged(int);
     void on_snapshotSelectButton_clicked();
+    void on_snapshotCreateSubdirectories_toggled(bool);
     void on_snapshotFormat_currentIndexChanged (int i);
     void on_snapshotDelay_valueChanged(double);
     void on_recordingButton_toggled(bool);

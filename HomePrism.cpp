@@ -98,6 +98,11 @@ void HomePrism::on_snapshotSelectButton_clicked()
     this->SaveData();
 }
 
+void HomePrism::on_snapshotCreateSubdirectories_toggled(bool)
+{
+    this->SaveData();
+}
+
 void HomePrism::on_snapshotFormat_currentIndexChanged(int i)
 {
     //std::cout<< "on_snapshotFormat_currentChanged" << std::endl;
@@ -130,18 +135,36 @@ void HomePrism::on_recordingButton_toggled(bool checked)
 void HomePrism::on_snapshotTimer_timeout()
 {
 
+    //get current date and time
+    QDateTime dateTime = QDateTime::currentDateTime();
+	QString dateTimeString = dateTime.toString("yyMMdd-hhmmss");
+
+    // dirs
     QString dirStr = d->ui.snapshotDirectory->text();
     if( dirStr.isEmpty() )
         dirStr = ".";
     dirStr = dirStr + QDir::separator();
+    bool createSubDir = d->ui.snapshotCreateSubdirectories->isChecked();
+    if( createSubDir )
+    {
+        dirStr = dirStr + dateTime.toString("yyMMdd-hh") + QDir::separator();
+        QDir newDir(dirStr);
+        if( !newDir.exists() )
+        {
+            if(!newDir.mkdir(dirStr))
+            {
+                QString err = QString("Error: Cannot create directory %1!").arg(dirStr);
+                d->ui.statusbar->showMessage(err);
+                return;
+            }
+        }
+    }
 
+    // ext
     QString ext = QString(".") + d->ui.snapshotFormat->currentText();
 
-    //get current date and time
-    QDateTime dateTime = QDateTime::currentDateTime();
-	QString dateTimeString = dateTime.toString("yyMMdd-hhmmss");
+    // create filename
     QString baseFileName = dateTimeString;
-
     int i = 1;
     QFileInfo f(dirStr+baseFileName+ext);
     while(f.exists())
@@ -161,8 +184,8 @@ void HomePrism::on_snapshotTimer_timeout()
         if(!cv::imwrite(finalFileName, d->currentImage))
         {
             QString err = QString("Error: Cannot write snapshot %1 (please check filename, permissions)!").arg(QString::fromStdString(finalFileName));
-
             d->ui.statusbar->showMessage(err);
+            return;
         }
         /*
         else
@@ -257,6 +280,7 @@ void HomePrism::SaveData()
     qDebug() << "saving settings";
     d->settings->setValue("cameraNumber", d->ui.cameraNumber->value() );
     d->settings->setValue("snapshotDirectory", d->ui.snapshotDirectory->text() );
+    d->settings->setValue("snapshotCreateSubdirectories", d->ui.snapshotCreateSubdirectories->isChecked() );
     d->settings->setValue("snapshotFormat", d->ui.snapshotFormat->currentText() );
     d->settings->setValue("snapshotDelay", d->ui.snapshotDelay->value() );
 
@@ -269,6 +293,7 @@ void HomePrism::SaveData()
     qDebug() << "settings saved: "
          << "cameraNumber=" << d->settings->value("cameraNumber").toInt()
          << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
+         << ", snapshotCreateSubdirectories=" << d->settings->value("snapshotCreateSubdirectories").toBool()
          << ", snapshotFormat=" << d->settings->value("snapshotFormat").toString()
          << ", snapshotDelay=" << d->settings->value("snapshotDelay").toDouble()
          << ", wipeCheckBox=" << d->settings->value("wipeCheckBox").toBool()
@@ -293,6 +318,11 @@ void HomePrism::LoadData()
         snapshotDirectory = d->settings->value("snapshotDirectory").toString();
     if(snapshotDirectory.isEmpty())
         snapshotDirectory = QDir::currentPath();
+
+    // snapshotCreateSubdirectories
+    bool snapshotCreateSubdirectories = false;
+    if( d->settings->contains("snapshotCreateSubdirectories") )
+        snapshotCreateSubdirectories = d->settings->value("snapshotCreateSubdirectories").toBool();
 
     // snapshotFormat
     int snapshotFormatIndex = 0;
@@ -331,6 +361,7 @@ void HomePrism::LoadData()
     qDebug() << "settings loaded: "
          << "cameraNumber=" << d->settings->value("cameraNumber").toInt()
          << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
+         << ", snapshotCreateSubdirectories=" << d->settings->value("snapshotCreateSubdirectories").toBool()
          << ", snapshotFormat=" << d->settings->value("snapshotFormat").toString()
          << ", snapshotDelay=" << d->settings->value("snapshotDelay").toDouble()
          << ", wipeCheckBox=" << d->settings->value("wipeCheckBox").toBool()
@@ -340,6 +371,7 @@ void HomePrism::LoadData()
     // set ui
     d->ui.cameraNumber->setValue(cameraNumber);
     d->ui.snapshotDirectory->setText(snapshotDirectory);
+    d->ui.snapshotCreateSubdirectories->setChecked(snapshotCreateSubdirectories);
     d->ui.snapshotFormat->setCurrentIndex(snapshotFormatIndex);
     d->ui.snapshotDelay->setValue(snapshotDelay);
     d->ui.wipeCheckBox->setChecked(wipeCheckBox);
