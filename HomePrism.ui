@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>787</width>
-    <height>399</height>
+    <height>537</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,17 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="0" column="2" rowspan="4">
+    <item row="2" column="1">
+     <widget class="QPushButton" name="showVideoButton">
+      <property name="text">
+       <string>Show Video</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1" rowspan="2">
      <widget class="QScrollArea" name="scrollArea">
       <property name="minimumSize">
        <size>
@@ -33,10 +43,10 @@
       <widget class="QWidget" name="scrollAreaWidgetContents">
        <property name="geometry">
         <rect>
-         <x>-2</x>
+         <x>0</x>
          <y>0</y>
-         <width>320</width>
-         <height>283</height>
+         <width>322</width>
+         <height>447</height>
         </rect>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -69,209 +79,323 @@
       </widget>
      </widget>
     </item>
-    <item row="5" column="2">
-     <widget class="QPushButton" name="showVideoButton">
-      <property name="text">
-       <string>Show Video</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1" rowspan="2">
-     <widget class="QGroupBox" name="groupBox_2">
-      <property name="title">
-       <string>Recording settings</string>
-      </property>
-      <layout class="QFormLayout" name="formLayout">
+    <item row="0" column="2">
+     <widget class="QWidget" name="widget_3" native="true">
+      <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Directory for snapshots:</string>
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="title">
+          <string>Recording settings</string>
          </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QWidget" name="widget_2" native="true">
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <property name="spacing">
-           <number>2</number>
-          </property>
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QLineEdit" name="snapshotDirectory">
-            <property name="readOnly">
-             <bool>true</bool>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Directory for snapshots:</string>
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="snapshotSelectButton">
+          <item row="0" column="1">
+           <widget class="QWidget" name="widget_2" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout">
+             <property name="spacing">
+              <number>2</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLineEdit" name="snapshotDirectory">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="snapshotSelectButton">
+               <property name="text">
+                <string>Select</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_3">
             <property name="text">
-             <string>Select</string>
+             <string>Format of snapshots:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="snapshotFormat">
+            <item>
+             <property name="text">
+              <string>png</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>jpg</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>bmp</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="snapshotDelayLabel">
+            <property name="text">
+             <string>Snapshot Delay:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="snapshotDelay">
+            <property name="suffix">
+             <string> second(s)</string>
+            </property>
+            <property name="decimals">
+             <number>2</number>
+            </property>
+            <property name="minimum">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>999999999.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="QCheckBox" name="snapshotCreateSubdirectories">
+            <property name="text">
+             <string>Create Subdirectories per Hour</string>
             </property>
            </widget>
           </item>
          </layout>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Format of snapshots:</string>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>Video input settings</string>
          </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QComboBox" name="snapshotFormat">
-         <item>
-          <property name="text">
-           <string>png</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>jpg</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>bmp</string>
-          </property>
-         </item>
+         <layout class="QFormLayout" name="formLayout_2">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Camera Number</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="cameraNumber"/>
+          </item>
+         </layout>
         </widget>
        </item>
        <item row="3" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Snapshot Delay:</string>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>General Settings</string>
          </property>
+         <layout class="QFormLayout" name="formLayout_3">
+          <property name="fieldGrowthPolicy">
+           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="wipeCheckBox">
+            <property name="text">
+             <string>Wipe Snapshots older than</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QWidget" name="widget" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QSpinBox" name="wipeTime">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>999999999</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="wipeTimeMultiplier">
+               <item>
+                <property name="text">
+                 <string>days</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>hours</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>minutes</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QDoubleSpinBox" name="snapshotDelay">
-         <property name="suffix">
-          <string> second(s)</string>
+       <item row="4" column="0">
+        <widget class="QGroupBox" name="movementDetection">
+         <property name="title">
+          <string>Movement Detection</string>
          </property>
-         <property name="decimals">
-          <number>2</number>
+         <property name="checkable">
+          <bool>true</bool>
          </property>
-         <property name="minimum">
-          <double>0.010000000000000</double>
+         <property name="checked">
+          <bool>false</bool>
          </property>
-         <property name="maximum">
-          <double>999999999.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>1.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" colspan="2">
-        <widget class="QCheckBox" name="snapshotCreateSubdirectories">
-         <property name="text">
-          <string>Create Subdirectories per Hour</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QGroupBox" name="groupBox">
-      <property name="title">
-       <string>Video input settings</string>
-      </property>
-      <layout class="QFormLayout" name="formLayout_2">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Camera Number</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QSpinBox" name="cameraNumber"/>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="3" column="1">
-     <widget class="QGroupBox" name="groupBox_3">
-      <property name="title">
-       <string>General Settings</string>
-      </property>
-      <layout class="QFormLayout" name="formLayout_3">
-       <item row="0" column="1">
-        <widget class="QWidget" name="widget" native="true">
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QSpinBox" name="wipeTime">
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="4" column="1">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Detection Delay</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Width and Height of Rectangle</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QSpinBox" name="rectWidth">
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="singleStep">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Upper Left Corner of Detection Rectangle (x,y):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QSpinBox" name="upperLeftCornerX">
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="singleStep">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2" colspan="2">
+           <widget class="QSpinBox" name="movementDetectionDelay">
+            <property name="suffix">
+             <string> milliseconds</string>
+            </property>
             <property name="minimum">
-             <number>1</number>
+             <number>10</number>
             </property>
             <property name="maximum">
              <number>999999999</number>
             </property>
+            <property name="singleStep">
+             <number>20</number>
+            </property>
+            <property name="value">
+             <number>300</number>
+            </property>
            </widget>
           </item>
-          <item>
-           <widget class="QComboBox" name="wipeTimeMultiplier">
-            <item>
-             <property name="text">
-              <string>days</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>hours</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>minutes</string>
-             </property>
-            </item>
+          <item row="3" column="3">
+           <widget class="QSpinBox" name="rectHeight">
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="singleStep">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QSpinBox" name="upperLeftCornerY">
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="singleStep">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Detection Sensitivity (0-255):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2" colspan="2">
+           <widget class="QSpinBox" name="detectionSensitivity">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>5</number>
+            </property>
            </widget>
           </item>
          </layout>
         </widget>
        </item>
-       <item row="0" column="0">
-        <widget class="QCheckBox" name="wipeCheckBox">
-         <property name="text">
-          <string>Wipe Snapshots older than</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
     </item>
-    <item row="5" column="1">
+    <item row="2" column="2">
      <widget class="QPushButton" name="recordingButton">
       <property name="text">
        <string>Record</string>
@@ -289,7 +413,7 @@
      <x>0</x>
      <y>0</y>
      <width>787</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
