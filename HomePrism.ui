@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>787</width>
-    <height>537</height>
+    <height>718</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,6 +23,16 @@
      <widget class="QPushButton" name="showVideoButton">
       <property name="text">
        <string>Show Video</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="QPushButton" name="recordingButton">
+      <property name="text">
+       <string>Record</string>
       </property>
       <property name="checkable">
        <bool>true</bool>
@@ -46,7 +56,7 @@
          <x>0</x>
          <y>0</y>
          <width>322</width>
-         <height>447</height>
+         <height>516</height>
         </rect>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -192,29 +202,10 @@
          </layout>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="groupBox">
-         <property name="title">
-          <string>Video input settings</string>
-         </property>
-         <layout class="QFormLayout" name="formLayout_2">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Camera Number</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QSpinBox" name="cameraNumber"/>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item row="3" column="0">
         <widget class="QGroupBox" name="groupBox_3">
          <property name="title">
-          <string>General Settings</string>
+          <string>Wipe Settings</string>
          </property>
          <layout class="QFormLayout" name="formLayout_3">
           <property name="fieldGrowthPolicy">
@@ -274,6 +265,88 @@
             </layout>
            </widget>
           </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="wipeBySize">
+            <property name="text">
+             <string>Wipe if Directory is bigger than</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QWidget" name="widget_4" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <property name="spacing">
+              <number>6</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QSpinBox" name="wipeAmount">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>999999999</number>
+               </property>
+               <property name="value">
+                <number>1</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="wipeSizeMultiplier">
+               <property name="currentIndex">
+                <number>2</number>
+               </property>
+               <item>
+                <property name="text">
+                 <string>Kilobyte (KB)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Megabyte (MB)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Gigabyte (GB)</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>Video input settings</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout_2">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Camera Number</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="cameraNumber"/>
+          </item>
          </layout>
         </widget>
        </item>
@@ -289,76 +362,6 @@
           <bool>false</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="4" column="1">
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>Detection Delay</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Width and Height of Rectangle</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="2">
-           <widget class="QSpinBox" name="rectWidth">
-            <property name="maximum">
-             <number>999999999</number>
-            </property>
-            <property name="singleStep">
-             <number>10</number>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Upper Left Corner of Detection Rectangle (x,y):</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QSpinBox" name="upperLeftCornerX">
-            <property name="maximum">
-             <number>999999999</number>
-            </property>
-            <property name="singleStep">
-             <number>10</number>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="2" colspan="2">
-           <widget class="QSpinBox" name="movementDetectionDelay">
-            <property name="suffix">
-             <string> milliseconds</string>
-            </property>
-            <property name="minimum">
-             <number>10</number>
-            </property>
-            <property name="maximum">
-             <number>999999999</number>
-            </property>
-            <property name="singleStep">
-             <number>20</number>
-            </property>
-            <property name="value">
-             <number>300</number>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="3">
-           <widget class="QSpinBox" name="rectHeight">
-            <property name="maximum">
-             <number>999999999</number>
-            </property>
-            <property name="singleStep">
-             <number>10</number>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="3">
            <widget class="QSpinBox" name="upperLeftCornerY">
             <property name="maximum">
@@ -366,6 +369,16 @@
             </property>
             <property name="singleStep">
              <number>10</number>
+            </property>
+            <property name="value">
+             <number>20</number>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Detection Delay</string>
             </property>
            </widget>
           </item>
@@ -389,20 +402,190 @@
             </property>
            </widget>
           </item>
+          <item row="3" column="2">
+           <widget class="QSpinBox" name="rectWidth">
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="singleStep">
+             <number>10</number>
+            </property>
+            <property name="value">
+             <number>0</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Upper Left Corner of Detection Rectangle (x,y):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QSpinBox" name="upperLeftCornerX">
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="singleStep">
+             <number>10</number>
+            </property>
+            <property name="value">
+             <number>0</number>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2" colspan="2">
+           <widget class="QSpinBox" name="movementDetectionDelay">
+            <property name="suffix">
+             <string> milliseconds</string>
+            </property>
+            <property name="minimum">
+             <number>10</number>
+            </property>
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="singleStep">
+             <number>20</number>
+            </property>
+            <property name="value">
+             <number>300</number>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Width and Height of Rectangle</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QSpinBox" name="rectHeight">
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="singleStep">
+             <number>10</number>
+            </property>
+            <property name="value">
+             <number>20</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QGroupBox" name="skipDetection">
+         <property name="title">
+          <string>Skip recording on these dates</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="skipMo">
+            <property name="text">
+             <string>Mo</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="5">
+           <widget class="QCheckBox" name="skipSa">
+            <property name="text">
+             <string>Sa</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="6">
+           <widget class="QCheckBox" name="skipSu">
+            <property name="text">
+             <string>Su</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QCheckBox" name="skipFr">
+            <property name="text">
+             <string>Fr</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QCheckBox" name="skipTh">
+            <property name="text">
+             <string>Th</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QCheckBox" name="skipWe">
+            <property name="text">
+             <string>We</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="skipTu">
+            <property name="text">
+             <string>Tu</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>From:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QTimeEdit" name="skipFromTime">
+            <property name="displayFormat">
+             <string>HH:mm</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>To:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QTimeEdit" name="skipToTime">
+            <property name="displayFormat">
+             <string>HH:mm</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
       </layout>
      </widget>
     </item>
-    <item row="2" column="2">
-     <widget class="QPushButton" name="recordingButton">
-      <property name="text">
-       <string>Record</string>
+    <item row="3" column="1" colspan="2">
+     <widget class="QGroupBox" name="groupBox_4">
+      <property name="title">
+       <string>Log</string>
       </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <item row="0" column="0">
+        <widget class="QListWidget" name="log">
+         <property name="autoScroll">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
    </layout>

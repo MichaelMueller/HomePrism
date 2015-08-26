@@ -26,6 +26,7 @@ public:
   QTimer* snapshotTimer;
   QTimer* wipeTimer;
   std::vector<cv::Mat> previousImages;
+  QLabel *statusLabel;
 };
 
 HomePrism::HomePrism()
@@ -48,6 +49,8 @@ HomePrism::HomePrism()
 
   d->ui.setupUi(this);
   setWindowTitle(HomePrism_TITLE);
+  d->statusLabel = new QLabel(this);
+  d->ui.statusbar->addPermanentWidget(d->statusLabel, 1);
   this->LoadData();
 }
 
@@ -113,7 +116,7 @@ bool HomePrism::getMovementDetectionRectangle(cv::Rect& rect)
     }
     else
     {
-      d->ui.statusbar->showMessage("Invalid values for rectangle (out of bounds)");
+      this->showError("Invalid values for rectangle (out of bounds)");
       return false;
     }
   }
@@ -165,15 +168,15 @@ void HomePrism::on_recordingButton_toggled(bool checked)
 {
   if (checked)
   {
-    d->snapshotTimer->start();
     if (d->ui.movementDetection->isChecked())
     {
-      d->snapshotTimer->setInterval(d->ui.snapshotDelay->value());
+      d->snapshotTimer->setInterval(d->ui.movementDetectionDelay->value());
     }
     else
     {
-      d->snapshotTimer->setInterval(this->toMilliSeconds(d->ui.movementDetectionDelay->value()));
+      d->snapshotTimer->setInterval(this->toMilliSeconds(d->ui.snapshotDelay->value()));
     }
+    d->snapshotTimer->start();
   }
   else
   {
@@ -292,15 +295,85 @@ bool HomePrism::detectMotion()
   bitwise_and(d1, d2, motion);
   threshold(motion, motion, 35, 255, CV_THRESH_BINARY);
   erode(motion, motion, kernel_ero);
+#ifdef _DEBUG
   imshow("test", motion);
   waitKey(5);
+#endif
   number_of_changes = ::detectMotion(motion, result, result_cropped, x_start, x_stop, y_start, y_stop, max_deviation, color);
 
   return (number_of_changes >= there_is_motion);
 }
 
+void HomePrism::showError(const QString& text)
+{
+  QString newText;
+  QDateTime dateTime = QDateTime::currentDateTime();
+  newText = dateTime.toString() + QString(": ") + text;
+
+  QListWidgetItem* pItem = new QListWidgetItem(newText);
+  pItem->setForeground(Qt::red); // sets red text
+  //pItem->setBackground(Qt::green); // sets green background
+  d->ui.log->addItem(pItem);
+  //d->statusLabel->setStyleSheet("QLabel { color: red; font-weight: bold;}");
+  //d->statusLabel->setText(text);
+}
+void HomePrism::showText(const QString& text)
+{
+  QString newText;
+  QDateTime dateTime = QDateTime::currentDateTime();
+  newText = dateTime.toString() + QString(": ") + text;
+
+  //d->statusLabel->setStyleSheet("QLabel { color: black; font-weight: bold;}");
+  //d->statusLabel->setText(text);
+  QListWidgetItem* pItem = new QListWidgetItem(newText);
+  //pItem->setBackground(Qt::green); // sets green background
+  d->ui.log->addItem(pItem);
+  d->ui.log->scrollToBottom();
+}
+
+bool HomePrism::skipRecording()
+{
+  if (d->ui.skipDetection->isChecked())
+  {
+    QDateTime dateTime = QDateTime::currentDateTime();
+
+    int day = dateTime.date().dayOfWeek();
+    bool dayMatches = (day == 1 && d->ui.skipMo->isChecked())
+      || (day == 2 && d->ui.skipTu->isChecked())
+      || (day == 3 && d->ui.skipWe->isChecked())
+      || (day == 4 && d->ui.skipTh->isChecked())
+      || (day == 5 && d->ui.skipFr->isChecked())
+      || (day == 6 && d->ui.skipSa->isChecked())
+      || (day == 7 && d->ui.skipSu->isChecked());
+
+    if (dayMatches)
+    {
+      QTime current = dateTime.time();
+      QTime from = d->ui.skipFromTime->time();
+      QTime to = d->ui.skipToTime->time();
+
+      if (from <= to)
+      {
+        return current > from && current < to;
+      }
+      else
+      {
+        QTime oneMinuteBeforeMidnight = QTime::fromString("23:59", "HH:mm");
+        QTime midnight = QTime::fromString("00:00", "HH:mm");
+        bool todayInTime = (current > from && current <= oneMinuteBeforeMidnight);
+        bool tomorrowInTime = (current >= midnight && current < to);
+        return todayInTime || tomorrowInTime;
+      }
+    }
+  }
+  return false;
+}
+
 void HomePrism::on_snapshotTimer_timeout()
 {
+  if (this->skipRecording())
+    return;
+
   if (!this->readCurrentImage())
   {
     d->ui.recordingButton->click();
@@ -312,12 +385,11 @@ void HomePrism::on_snapshotTimer_timeout()
     {
       if (!this->detectMotion())
       {
-        d->ui.statusbar->showMessage("No motion detected");
         return;
       }
       else
       {
-        d->ui.statusbar->showMessage("!!! Motion detected !!!");
+        this->showText("!!! Motion detected !!!");
       }
     }
 
@@ -346,7 +418,7 @@ void HomePrism::saveSnapshot()
       if (!newDir.mkdir(dirStr))
       {
         QString err = QString("Error: Cannot create directory %1!").arg(dirStr);
-        d->ui.statusbar->showMessage(err);
+        this->showError(err);
         return;
       }
     }
@@ -369,16 +441,53 @@ void HomePrism::saveSnapshot()
   if (!cv::imwrite(finalFileName, d->currentImage))
   {
     QString err = QString("Error: Cannot write snapshot %1 (please check filename, permissions)!").arg(QString::fromStdString(finalFileName));
-    d->ui.statusbar->showMessage(err);
+    this->showError(err);
     return;
   }
   /*
   else
   {
   QString info = QString("Snapshot %1 saved!").arg(QString::fromStdString(finalFileName));
-  d->ui.statusbar->showMessage(info);
+  this->showError(info);
   }
   */
+  if (d->ui.wipeBySize->isChecked())
+  {
+    QFileInfoList fileList = this->getFileInfoList();
+    qint64 kbSize = 0;
+    for (int i = 0; i < fileList.size(); ++i)
+    {
+      const QFileInfo& info = fileList.at(i);
+      kbSize = kbSize + (info.size() / 1000);
+    }
+
+    qint64 allowedSize = d->ui.wipeAmount->value();
+    if (d->ui.wipeSizeMultiplier->currentIndex() == 1)
+      allowedSize = allowedSize * 1000;
+    else if (d->ui.wipeSizeMultiplier->currentIndex() == 2)
+      allowedSize = allowedSize * 1000 * 1000;
+
+    if (kbSize > allowedSize)
+    {
+      while (kbSize > allowedSize && fileList.size() > 0)
+      {
+        QFileInfo info = fileList.at(0);
+        kbSize = kbSize - (info.size() / 1000);
+        QFile file(info.absoluteFilePath());
+        if (!file.remove())
+        {
+          QString err = QString("File %1 could not be wiped!").arg(info.absoluteFilePath());
+          this->showError(err);
+        }
+        else
+        {
+          QString message = QString("File %1 wiped!").arg(info.absoluteFilePath());
+          this->showText(message);
+        }
+        fileList.removeAt(0);
+      }
+    }
+  }
 }
 void HomePrism::on_wipeCheckBox_toggled(bool checked)
 {
@@ -390,6 +499,29 @@ void HomePrism::on_wipeCheckBox_toggled(bool checked)
 }
 
 void HomePrism::on_wipeTime_valueChanged(int)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_wipeTimeMultiplier_currentIndexChanged(int i)
+{
+  this->SaveData();
+}
+void HomePrism::on_wipeBySize_toggled(bool checked)
+{
+  this->SaveData();
+  if (checked)
+    d->wipeTimer->start();
+  else
+    d->wipeTimer->stop();
+}
+
+void HomePrism::on_wipeAmount_valueChanged(int)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_wipeSizeMultiplier_currentIndexChanged(int i)
 {
   this->SaveData();
 }
@@ -425,13 +557,9 @@ void HomePrism::on_rectHeight_valueChanged(int)
   this->SaveData();
 }
 
-void HomePrism::on_wipeTimeMultiplier_currentIndexChanged(int i)
+void HomePrism::on_movementDetectionDelay_valueChanged(int delay)
 {
-  this->SaveData();
-}
-
-void HomePrism::on_movementDetectionDelay_valueChanged(int)
-{
+  d->snapshotTimer->setInterval(delay);
   this->SaveData();
 }
 
@@ -440,9 +568,71 @@ void HomePrism::on_detectionSensitivity_valueChanged(int)
   this->SaveData();
 }
 
-void HomePrism::on_wipeTimer_timeout()
+void HomePrism::on_skipDetection_toggled(bool)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipMo_toggled(bool)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipTu_toggled(bool)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipWe_toggled(bool)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipTh_toggled(bool)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipFr_toggled(bool)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipSa_toggled(bool)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipSu_toggled(bool)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipFromTime_timeChanged(const QTime&)
+{
+  this->SaveData();
+}
+
+void HomePrism::on_skipToTime_timeChanged(const QTime&)
+{
+  this->SaveData();
+}
+
+QFileInfoList HomePrism::getFileInfoList()
 {
   QDir dir(d->ui.snapshotDirectory->text());
+
+  QStringList filters;
+  for (int i = 0; i < d->ui.snapshotFormat->count(); ++i)
+    filters << QString(QString("*.") + d->ui.snapshotFormat->itemText(i));
+  //dir.setNameFilters(filters);
+
+  QFileInfoList fileList = dir.entryInfoList(filters);
+  return fileList;
+}
+
+void HomePrism::on_wipeTimer_timeout()
+{
   QDateTime currentDateTime = QDateTime::currentDateTime();
   qint64 currentTime = currentDateTime.toMSecsSinceEpoch();
   // minutes
@@ -456,12 +646,7 @@ void HomePrism::on_wipeTimer_timeout()
   qint64 wipeTime = d->ui.wipeTime->value();
   qint64 allowedAge = wipeTime*multiplier;
 
-  QStringList filters;
-  for (int i = 0; i < d->ui.snapshotFormat->count(); ++i)
-    filters << QString(QString("*.") + d->ui.snapshotFormat->itemText(i));
-  //dir.setNameFilters(filters);
-
-  QFileInfoList fileList = dir.entryInfoList(filters);
+  QFileInfoList fileList = this->getFileInfoList();
   for (int i = 0; i < fileList.size(); ++i)
   {
     qint64 modTime = fileList.at(i).lastModified().toMSecsSinceEpoch();
@@ -472,7 +657,7 @@ void HomePrism::on_wipeTimer_timeout()
       if (!file.remove())
       {
         QString err = QString("File %1 could not be wiped!").arg(fileList.at(i).absoluteFilePath());
-        d->ui.statusbar->showMessage(err);
+        this->showError(err);
       }
     }
   }
@@ -489,7 +674,7 @@ bool HomePrism::readCurrentImage()
   bool readImage = d->capture.read(image);
   if (!readImage)
   {
-    d->ui.statusbar->showMessage("Error: Cannot read images from capture device (Wrong capture number?)!");
+    this->showError("Error: Cannot read images from capture device (Wrong capture number?)!");
     return false;
   }
   d->currentImage = image;
@@ -509,6 +694,10 @@ void HomePrism::SaveData()
   d->settings->setValue("wipeTime", d->ui.wipeTime->value());
   d->settings->setValue("wipeTimeMultiplier", d->ui.wipeTimeMultiplier->currentText());
 
+  d->settings->setValue("wipeBySize", d->ui.wipeBySize->isChecked());
+  d->settings->setValue("wipeAmount", d->ui.wipeAmount->value());
+  d->settings->setValue("wipeSizeMultiplier", d->ui.wipeSizeMultiplier->currentText());
+
   d->settings->setValue("movementDetection", d->ui.movementDetection->isChecked());
   d->settings->setValue("upperLeftCornerX", d->ui.upperLeftCornerX->value());
   d->settings->setValue("upperLeftCornerY", d->ui.upperLeftCornerY->value());
@@ -520,6 +709,16 @@ void HomePrism::SaveData()
   d->settings->setValue("geometry", saveGeometry());
   d->settings->setValue("windowState", saveState());
   d->settings->setValue("showVideo", d->ui.showVideoButton->isChecked());
+  d->settings->setValue("skipDetection", d->ui.skipDetection->isChecked());
+  d->settings->setValue("skipMo", d->ui.skipMo->isChecked());
+  d->settings->setValue("skipTu", d->ui.skipTu->isChecked());
+  d->settings->setValue("skipWe", d->ui.skipWe->isChecked());
+  d->settings->setValue("skipTh", d->ui.skipTh->isChecked());
+  d->settings->setValue("skipFr", d->ui.skipFr->isChecked());
+  d->settings->setValue("skipSa", d->ui.skipSa->isChecked());
+  d->settings->setValue("skipSu", d->ui.skipSu->isChecked());
+  d->settings->setValue("skipFromTime", d->ui.skipFromTime->time());
+  d->settings->setValue("skipToTime", d->ui.skipToTime->time());
   d->settings->sync();
 
   qDebug() << "settings saved: "
@@ -531,13 +730,26 @@ void HomePrism::SaveData()
     << ", wipeCheckBox=" << d->settings->value("wipeCheckBox").toBool()
     << ", wipeTime=" << d->settings->value("wipeTime").toInt()
     << ", wipeTimeMultiplier=" << d->settings->value("wipeTimeMultiplier").toString()
+    << ", wipeBySize=" << d->settings->value("wipeBySize").toBool()
+    << ", wipeAmount=" << d->settings->value("wipeAmount").toInt()
+    << ", wipeSizeMultiplier=" << d->settings->value("wipeSizeMultiplier").toString()
     << ", movementDetection=" << d->settings->value("movementDetection").toInt()
     << ", upperLeftCornerX=" << d->settings->value("upperLeftCornerX").toInt()
     << ", upperLeftCornerY=" << d->settings->value("upperLeftCornerY").toInt()
     << ", rectWidth=" << d->settings->value("rectWidth").toInt()
     << ", rectHeight=" << d->settings->value("rectHeight").toInt()
     << ", movementDetectionDelay=" << d->settings->value("movementDetectionDelay").toInt()
-    << ", detectionSensitivity=" << d->settings->value("detectionSensitivity").toInt();
+    << ", detectionSensitivity=" << d->settings->value("detectionSensitivity").toInt()
+    << ", skipDetection=" << d->settings->value("skipDetection").toInt()
+    << ", skipMo=" << d->settings->value("skipMo").toInt()
+    << ", skipTu=" << d->settings->value("skipTu").toInt()
+    << ", skipWe=" << d->settings->value("skipWe").toInt()
+    << ", skipTh=" << d->settings->value("skipTh").toInt()
+    << ", skipFr=" << d->settings->value("skipFr").toInt()
+    << ", skipSa=" << d->settings->value("skipSa").toInt()
+    << ", skipSu=" << d->settings->value("skipSu").toInt()
+    << ", skipFromTime=" << d->settings->value("skipFromTime").toString()
+    << ", skipToTime=" << d->settings->value("skipToTime").toString();
 }
 void HomePrism::closeEvent(QCloseEvent *event)
 {
@@ -599,6 +811,25 @@ void HomePrism::LoadData()
       wipeTimeMultiplierIndex = index;
   }
 
+  // wipeBySize
+  bool wipeBySize = false;
+  if (d->settings->contains("wipeBySize"))
+    wipeBySize = d->settings->value("wipeBySize").toBool();
+
+  // wipeAmount
+  int wipeAmount = 1;
+  if (d->settings->contains("wipeAmount"))
+    wipeAmount = d->settings->value("wipeAmount").toInt();
+
+  // wipeSizeMultiplier
+  int wipeSizeMultiplierIndex = 0;
+  if (d->settings->contains("wipeSizeMultiplier"))
+  {
+    int index = d->ui.wipeSizeMultiplier->findText(d->settings->value("wipeSizeMultiplier").toString());
+    if (index >= 0)
+      wipeSizeMultiplierIndex = index;
+  }
+
   // movementDetection
   bool movementDetection = false;
   if (d->settings->contains("movementDetection"))
@@ -647,6 +878,56 @@ void HomePrism::LoadData()
   if (d->settings->contains("showVideo"))
     showVideo = d->settings->value("showVideo").toBool();
 
+  // skipDetection
+  bool skipDetection = false;
+  if (d->settings->contains("skipDetection"))
+    skipDetection = d->settings->value("skipDetection").toBool();
+
+  // skipMo
+  bool skipMo = false;
+  if (d->settings->contains("skipMo"))
+    skipMo = d->settings->value("skipMo").toBool();
+
+  // skipTu
+  bool skipTu = false;
+  if (d->settings->contains("skipTu"))
+    skipTu = d->settings->value("skipTu").toBool();
+
+  // skipWe
+  bool skipWe = false;
+  if (d->settings->contains("skipWe"))
+    skipWe = d->settings->value("skipWe").toBool();
+
+  // skipTh
+  bool skipTh = false;
+  if (d->settings->contains("skipTh"))
+    skipTh = d->settings->value("skipTh").toBool();
+
+  // skipFr
+  bool skipFr = false;
+  if (d->settings->contains("skipFr"))
+    skipFr = d->settings->value("skipFr").toBool();
+
+  // skipSa
+  bool skipSa = false;
+  if (d->settings->contains("skipSa"))
+    skipSa = d->settings->value("skipSa").toBool();
+
+  // skipSu
+  bool skipSu = false;
+  if (d->settings->contains("skipSu"))
+    skipSu = d->settings->value("skipSu").toBool();
+
+  // skipFromTime
+  QTime skipFromTime;
+  if (d->settings->contains("skipFromTime"))
+    skipFromTime = d->settings->value("skipFromTime").toTime();
+
+  // skipToTime
+  QTime skipToTime;
+  if (d->settings->contains("skipToTime"))
+    skipToTime = d->settings->value("skipToTime").toTime();
+
   qDebug() << "settings loaded: "
     << "cameraNumber=" << d->settings->value("cameraNumber").toInt()
     << ", snapshotDirectory=" << d->settings->value("snapshotDirectory").toString()
@@ -656,13 +937,26 @@ void HomePrism::LoadData()
     << ", wipeCheckBox=" << d->settings->value("wipeCheckBox").toBool()
     << ", wipeTime=" << d->settings->value("wipeTime").toInt()
     << ", wipeTimeMultiplier=" << d->settings->value("wipeTimeMultiplier").toString()
-    << ", movementDetection=" << d->settings->value("movementDetection").toInt()
+    << ", wipeBySize=" << d->settings->value("wipeBySize").toBool()
+    << ", wipeAmount=" << d->settings->value("wipeAmount").toInt()
+    << ", wipeSizeMultiplier=" << d->settings->value("wipeSizeMultiplier").toString()
+    << ", movementDetection=" << d->settings->value("movementDetection").toBool()
     << ", upperLeftCornerX=" << d->settings->value("upperLeftCornerX").toInt()
     << ", upperLeftCornerY=" << d->settings->value("upperLeftCornerY").toInt()
     << ", rectWidth=" << d->settings->value("rectWidth").toInt()
     << ", rectHeight=" << d->settings->value("rectHeight").toInt()
     << ", movementDetectionDelay=" << d->settings->value("movementDetectionDelay").toInt()
-    << ", detectionSensitivity=" << d->settings->value("detectionSensitivity").toInt();
+    << ", detectionSensitivity=" << d->settings->value("detectionSensitivity").toInt()
+    << ", skipDetection=" << d->settings->value("skipDetection").toBool()
+    << ", skipMo=" << d->settings->value("skipMo").toBool()
+    << ", skipTu=" << d->settings->value("skipTu").toBool()
+    << ", skipWe=" << d->settings->value("skipWe").toBool()
+    << ", skipTh=" << d->settings->value("skipTh").toBool()
+    << ", skipFr=" << d->settings->value("skipFr").toBool()
+    << ", skipSa=" << d->settings->value("skipSa").toBool()
+    << ", skipSu=" << d->settings->value("skipSu").toBool()
+    << ", skipFromTime=" << d->settings->value("skipFromTime").toString()
+    << ", skipToTime=" << d->settings->value("skipToTime").toString();
 
   // set ui
   d->ui.cameraNumber->setValue(cameraNumber);
@@ -673,6 +967,9 @@ void HomePrism::LoadData()
   d->ui.wipeCheckBox->setChecked(wipeCheckBox);
   d->ui.wipeTime->setValue(wipeTime);
   d->ui.wipeTimeMultiplier->setCurrentIndex(wipeTimeMultiplierIndex);
+  d->ui.wipeBySize->setChecked(wipeBySize);
+  d->ui.wipeAmount->setValue(wipeAmount);
+  d->ui.wipeSizeMultiplier->setCurrentIndex(wipeSizeMultiplierIndex);
 
   // initialize values for timers etc
   d->snapshotTimer->setInterval(this->toMilliSeconds(d->ui.snapshotDelay->value()));
@@ -683,6 +980,22 @@ void HomePrism::LoadData()
   d->ui.rectHeight->setValue(rectHeight);
   d->ui.movementDetectionDelay->setValue(movementDetectionDelay);
   d->ui.detectionSensitivity->setValue(detectionSensitivity);
+
+  d->ui.skipDetection->setChecked(skipDetection);
+  d->ui.skipDetection->setChecked(skipDetection);
+  d->ui.skipMo->setChecked(skipMo);
+
+  d->ui.skipDetection->setChecked(skipDetection);
+  d->ui.skipMo->setChecked(skipMo);
+  d->ui.skipTu->setChecked(skipTu);
+  d->ui.skipWe->setChecked(skipWe);
+  d->ui.skipTh->setChecked(skipTh);
+  d->ui.skipFr->setChecked(skipFr);
+  d->ui.skipSa->setChecked(skipSa);
+  d->ui.skipSu->setChecked(skipSu);
+  d->ui.skipFromTime->setTime(skipFromTime);
+  d->ui.skipToTime->setTime(skipToTime);
+
   if (showVideo)
     d->ui.showVideoButton->click();
 }

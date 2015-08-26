@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.6)
 project (HomePrism)
 
 #version
-SET(HomePrism_MAJOR_VERSION 1)
+SET(HomePrism_MAJOR_VERSION 2)
 SET(HomePrism_MINOR_VERSION 0)
 SET(HomePrism_PATCH_VERSION 0)
 
